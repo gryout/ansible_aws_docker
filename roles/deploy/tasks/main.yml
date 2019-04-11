@@ -1,0 +1,56 @@
+- name: "APT - Add Docker GPG key"
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: "APT - Add Docker repository"
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+    state: present
+    filename: docker
+
+- name: "APT - install misc packages"
+  apt:
+    name: "{{ item }}"
+    update_cache: yes
+  with_items:
+    - "aptitude"
+    - "apt-transport-https"
+    - "ca-certificates"
+    - "curl"
+    - "software-properties-common"
+    - "python3-pip"
+
+- name: pip install docker-py
+  pip:
+    name: docker-py
+
+- name: "APT - install 'docker-ce'"
+  apt:
+    name: "docker-ce"
+    update_cache: yes
+
+
+
+- name: "Create a Volume"
+  docker_volume:
+    name:  docker_vol_web
+    # ansible 2.2 only
+- name: "Create a network"
+  docker_network:
+    name:  docker_net
+
+- name: "Launch nginx container"
+  docker_container:
+    name: devopstask
+    image: nginx:latest
+    volumes:
+      -  "docker_vol_web:/usr/share/nginx/html:ro"
+    ports:
+      - 80:80
+    restart: true
+    detach: true
+    networks:
+      - name:  docker_net
+        aliases:
+          - devopstask
