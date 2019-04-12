@@ -1,3 +1,5 @@
+---
+
 - name: "APT - Add Docker GPG key"
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
@@ -31,26 +33,77 @@
     update_cache: yes
 
 
+- name: enable docker service
+  service:
+    name: docker
+    enabled: yes
 
-- name: "Create a Volume"
+- name: "Create a web Volume"
   docker_volume:
-    name:  docker_vol_web
+    name: docker_vol_web
     # ansible 2.2 only
+
+
+- name: "Create a log Volume"
+  docker_volume:
+    name: docker_vol_nginx_log
+
+- name: "Create a nginxconf Volume"
+  docker_volume:
+    name: docker_vol_nginx
+
+- name: "copy conf files to docker volumes"
+  copy:
+    src: nginx/localhost.conf
+    dest: /var/lib/docker/volumes/docker_vol_nginx/_data/localhost.conf
+
+
+- name: "copy index files to docker volumes"
+  copy:
+    src: index.php
+    dest: /var/lib/docker/volumes/docker_vol_web/_data/index.php
+
+
+
 - name: "Create a network"
   docker_network:
     name:  docker_net
+
+- name: "Launch php-fpm container"
+  docker_container:
+    name: devopstaskphp
+    image: php:7.2-fpm
+    volumes:
+      -  "docker_vol_web:/var/www/html"
+
+    ports:
+      - 9000
+    restart: true
+    detach: true
+    restart_policy: always
+    networks:
+      - name:  docker_net
+        aliases:
+          - devopstaskphp
+
 
 - name: "Launch nginx container"
   docker_container:
     name: devopstask
     image: nginx:latest
     volumes:
-      -  "docker_vol_web:/usr/share/nginx/html:ro"
+      -  "docker_vol_web:/var/www/html"
+      -  "docker_vol_nginx:/etc/nginx/conf.d"
+      -  "docker_vol_nginx_log:/var/log/nginx"
     ports:
       - 80:80
     restart: true
+    restart_policy: always
     detach: true
     networks:
       - name:  docker_net
         aliases:
           - devopstask
+    links:
+            - "devopstaskphp:devopstaskphp"
+
