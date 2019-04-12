@@ -10,7 +10,7 @@ Requirements:
   
   
 
-**Before running the playbook make sure you have a keypair, and your aws access keys.**
+**Before running the playbook make sure you have a keypair and your aws access keys.**
 
 1. Modify "keypair" "vpcid" "localsubnet" variables in group_vars/all.yml according to your AWS environment.
 2. Modify "private_key_file" in ansible.conf with location of your pem file.
