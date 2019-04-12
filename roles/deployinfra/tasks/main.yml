@@ -1,0 +1,163 @@
+---
+
+  - name: include aws keys
+    include_vars:
+      file: awsKeys.yml
+
+
+  - name: Create subnet for web servers
+    ec2_vpc_subnet:
+      aws_access_key: "{{ ami_access }}"
+      aws_secret_key: "{{ ami_secret }}"
+      state: present
+      vpc_id: "{{vpcid}}"
+      cidr: "{{localsubnet}}"
+      region: "{{ region }}"
+      resource_tags:
+              Name: "{{websrv_subnet}}"
+    register: subnetinfo
+
+
+
+  - name: Create a security group
+    ec2_group:
+        name: "{{taskname}}-sg"
+        description: The webservers security group
+        region: "{{ region }}"
+        aws_access_key: "{{ ami_access }}"
+        aws_secret_key: "{{ ami_secret }}"
+        rules:
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 443
+            to_port: 443
+            cidr_ip: 0.0.0.0/0
+        rules_egress:
+          - proto: all
+            cidr_ip: 0.0.0.0/0
+
+
+
+   #http://stackoverflow.com/questions/34016583/ansible-ec2-elb-lb-https-to-http-error
+  - name: load balancer
+    ec2_elb_lb:
+      aws_access_key: '{{ ami_access }}'
+      aws_secret_key: '{{ ami_secret }}'
+      security_group_names: "{{taskname}}-sg"
+      name: "{{loadb}}"
+      region: "{{region}}"
+      subnets:
+       - "{{subnetinfo.subnet.id}}"
+      state: present
+      listeners:
+       - protocol: http
+         load_balancer_port: 80
+         instance_port: 80
+    register: loadbinfo
+
+
+
+   #info on the ec2_lc module
+   #http://docs.ansible.com/ansible/ec2_lc_module.html
+
+   #ansible 2.0 required for this task, installation directions at
+   #http://stackoverflow.com/questions/34903026/update-ansible-1-9-4-to-ansible-2-0
+  - name: launch config
+    ec2_lc:
+      aws_access_key: '{{ ami_access }}'
+      aws_secret_key: '{{ ami_secret }}'
+      region:  "{{region}}"
+      name: '{{lc}}'
+      image_id: "{{ hostvars['idholderami']['ami_id'] }}"
+      key_name: "{{ keypair }}"
+      security_groups: "{{taskname}}-sg"
+      instance_type: t2.micro
+      volumes:
+       - device_name: /dev/sda1
+         volume_size: 100
+         device_type: io1
+         iops: 3000
+         delete_on_termination: true
+
+   #http://docs.ansible.com/ansible/ec2_asg_module.html
+  - name: auto scaling group
+    ec2_asg:
+      aws_access_key: '{{ ami_access }}'
+      aws_secret_key: '{{ ami_secret }}'
+      region:  "{{ region }}"
+      name: '{{ auto_sc }}'
+      load_balancers: '{{ loadb }}'
+      availability_zones: 'us-east-2b'
+      launch_config_name: '{{ lc }}'
+      min_size: 1
+      max_size: 4
+      desired_capacity: 2
+      vpc_zone_identifier:
+       - "{{subnetinfo.subnet.id}}"
+      wait_for_instances: true
+
+   #http://docs.ansible.com/ansible/ec2_scaling_policy_module.html  
+   #auto scaling policy 
+  - name: scaling policy
+    ec2_scaling_policy:
+      aws_access_key: '{{ ami_access }}'
+      aws_secret_key: '{{ ami_secret }}'
+      region: "{{region}}"
+      state: present
+      name: "{{item.pol_name}}"
+      adjustment_type: "ChangeInCapacity"
+      asg_name: "{{auto_sc}}"
+      scaling_adjustment: "{{item.changes}}"
+      min_adjustment_step: 1
+      cooldown: 300
+    register: policies
+    with_items:
+      - pol_name: "cpuUP_{{auto_sc}}_policy"
+        changes: +1
+      - pol_name: "cpuDown_{{auto_sc}}_policy"
+        changes: -1
+
+   #http://stackoverflow.com/questions/36612103/ansible-ec2-metric-alarm-will-not-attach-to-auto-scaling-policy/36632370#36632370
+   #http://www.it-recipes.com/articles/blog/206
+   #http://docs.ansible.com/ansible/ec2_metric_alarm_module.html
+  - name: cloud watch alarms
+    ec2_metric_alarm:
+      aws_access_key: '{{ ami_access }}'
+      aws_secret_key: '{{ ami_secret }}'
+      state: present
+      region: "{{region}}"
+      name: "{{item.names}}"
+      metric: "CPUUtilization"
+      namespace: "AWS/EC2"
+      statistic: Average
+      comparison: "{{item.compare}}"
+      threshold: "{{item.limits}}"
+      period: 60
+      evaluation_periods: 1
+      unit: "Percent"
+      description: "{{item.desc}}"
+      dimensions: {'AutoScalingGroupName':'{{auto_sc}}'}
+      alarm_actions: "{{item.pol}}"
+    with_items:
+      - names: "cpuUP_{{auto_sc}}"
+        compare: ">="
+        limits: "20.0"
+        desc: "This will alarm when the average cpu usage of the ASG is greater than 20% for 1 minute"
+        pol: "{{policies.results[0]['arn']}}"
+      - names: "cpuDown_{{auto_sc}}"
+        compare: "<="
+        limits: "10.0"
+        desc: "This will alarm when the average cpu usage of the ASG is less than 10% for 1 minute"
+        pol: "{{policies.results[1]['arn']}}"
+
+
+
+  - debug:
+      msg: "{{loadbinfo.elb.dns_name}}"
