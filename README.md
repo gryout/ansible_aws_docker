@@ -18,7 +18,7 @@ Requirements:
 
 ```ansible-vault create awsKey```
 
-awsKey file should look like below:
+awsKeys.yml file should look like below:
 
 ```
 ami_access: 123123
