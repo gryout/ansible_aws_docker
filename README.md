@@ -29,4 +29,4 @@ ami_secret: 123asd21
 
 ``` ansible-playbook --ask-vault-pass deploy.yml  ```  
 
-The playbook fill print out the ELB public dns once finished.
+The playbook will print out the ELB public dns once finished.
