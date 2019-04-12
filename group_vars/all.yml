@@ -5,6 +5,13 @@ ansible_python_interpreter: "/usr/bin/env python3"
 image: ami-0c55b159cbfafe1f0
 region: us-east-2
 keypair: task
+vpcid: vpc-523b3e3a
+localsubnet: 172.31.0.0/24
+taskname: devopstask
+loadb: "{{taskname}}-lb"
+auto_sc:  "{{taskname}}_asg"
+lc: "{{taskname}}_lc"
+websrv_subnet: "{{taskname}}_sb"
 security_groups: default
 instance_type: t2.micro
 volumes:
@@ -12,4 +19,9 @@ volumes:
     device_type: gp2
     volume_size: 20
     delete_on_termination: true
+
+
+
+
+
 
