@@ -4,9 +4,9 @@
 ansible_python_interpreter: "/usr/bin/env python3"
 image: ami-0c55b159cbfafe1f0
 region: us-east-2
-keypair: task
-vpcid: vpc-523b3e3a
-localsubnet: 172.31.0.0/24
+keypair: 
+vpcid: 
+localsubnet: 
 taskname: devopstask
 loadb: "{{taskname}}-lb"
 auto_sc:  "{{taskname}}_asg"
