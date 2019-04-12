@@ -2,6 +2,8 @@
 
 This project creates an EC2 instance from an ubuntu image, deploys nginx, php-fpm containers and creates auto scaling group by using the previously created EC2 instance's image. 
 
+Tested on Ubuntu 18.04.2 
+
 Requirements:
   - python3
   - boto
