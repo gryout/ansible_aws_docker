@@ -4,9 +4,9 @@
 ansible_python_interpreter: "/usr/bin/env python3"
 image: ami-0c55b159cbfafe1f0
 region: us-east-2
-keypair: 
-vpcid: 
-localsubnet: 
+keypair: "name of the keypair on aws that you want to use"
+vpcid: "id of the vpc. this will be used for subnet creation"
+localsubnet: x.x.x.x/x
 taskname: devopstask
 loadb: "{{taskname}}-lb"
 auto_sc:  "{{taskname}}_asg"
