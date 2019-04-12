@@ -5,6 +5,7 @@ This project creates an EC2 instance from an ubuntu image, deploys nginx, php-fp
 Tested on Ubuntu 18.04.2 
 
 Requirements:
+  - ansible 2.7.1
   - python3
   - boto
   - botocore
