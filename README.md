@@ -16,7 +16,7 @@ Requirements:
 2. Modify "private_key_file" in ansible.conf with location of your pem file.
 3. Create an encrypted ./awsKeys.yml file with ansible-vault and add your AWS keys to ami_access ami_secret variables respectively. You can use below command to create the awsKeys.yml file and give it a password.
 
-```ansible-vault create awsKey```
+```ansible-vault create awsKeys.yml```
 
 awsKeys.yml file should look like below:
 
