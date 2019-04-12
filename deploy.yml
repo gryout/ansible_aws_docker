@@ -1,0 +1,30 @@
+---
+# deploy.yml
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  vars_files:
+    #contains the variables ami_access and ami_secret  
+    - awsKeys.yml
+    
+  roles:
+    - role: launch
+   
+
+
+- hosts: ami_img
+  remote_user: ubuntu
+  become: true
+  gather_facts: no
+  roles:
+    - deploy
+
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  roles:
+    - build-ami
+    - deployinfra
+
