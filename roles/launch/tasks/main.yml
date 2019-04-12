@@ -16,15 +16,9 @@
     wait: yes
   register: ec2
 
- #- name: Add new instances to host group
- # add_host:
- # name: "{{ item.public_dns_name }}"
- #  groups: "{{ name }}"
- #  ec2_id: "{{ item.id }}"
- # with_items: ec2.instances
 
 
-- name: Add the newly created host so that we can further contact it
+- name: Add the newly created host 
   add_host:
     name: "{{ item.public_ip }}"
     groups: ami_img
