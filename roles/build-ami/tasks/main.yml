@@ -1,0 +1,23 @@
+---
+# roles/build-ami/tasks/main.yml
+- name: include aws keys
+  include_vars:
+    file: awsKeys.yml
+
+
+- name: Create AMI
+  ec2_ami:
+    aws_access_key: "{{ ami_access }}"
+    aws_secret_key: "{{ ami_secret }}"
+    region: "{{ region }}"
+    instance_id: "{{ hostvars['idholder']['instance_id'] }}"
+    name: "devopstaskami"
+    wait: yes
+    state: present
+  register: ami
+
+
+- name: store the ec2 amiid
+  add_host:
+    name: idholderami
+    ami_id: "{{ami.image_id}}"
