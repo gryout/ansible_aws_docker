@@ -84,7 +84,7 @@
       region:  "{{ region }}"
       name: '{{ auto_sc }}'
       load_balancers: '{{ loadb }}'
-      availability_zones: "{{loadbinfo.elb.availability_zones.zone_name}}"
+      availability_zones: "{{loadbinfo.elb.zones[0]}}"
       launch_config_name: '{{ lc }}'
       min_size: 1
       max_size: 4
